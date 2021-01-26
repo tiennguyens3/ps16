@@ -65,13 +65,27 @@ class Waave_Pg extends PaymentModule
 
     public function install()
     {
-        if (!parent::install() || !$this->registerHook('paymentOptions') || !$this->registerHook('paymentReturn')) {
+        if (!parent::install() || !$this->registerHook('payment')) {
             return false;
         }
+
         return true;
     }
 
-    public function hookPaymentOptions($params)
+    public function uninstall()
+    {
+        if (!Configuration::deleteByName('WAAVE_SANDBOX')
+                || !Configuration::deleteByName('ACCESS_KEY')
+                || !Configuration::deleteByName('PRIVATE_KEY')
+                || !Configuration::deleteByName('VENUE_ID')
+                || !parent::uninstall()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function hookPayment($params)
     {
         if (!$this->active) {
             return;
@@ -81,11 +95,11 @@ class Waave_Pg extends PaymentModule
             return;
         }
 
-        $payment_options = [
-            $this->getExternalPaymentOption()
-        ];
+        $this->context->smarty->assign(array(
+            'this_path_bw' => $this->_path
+        ));
 
-        return $payment_options;
+        return $this->display(__FILE__, 'payment.tpl');
     }
 
     public function checkCurrency($cart)
@@ -101,16 +115,6 @@ class Waave_Pg extends PaymentModule
             }
         }
         return false;
-    }
-
-    public function getExternalPaymentOption()
-    {
-        $externalOption = new PaymentOption();
-        $externalOption->setAction($this->context->link->getModuleLink($this->name, 'payment', array(), true))
-                       ->setLogo(Media::getMediaPath(_PS_MODULE_DIR_.$this->name.'/payment.png'))
-                       ->setAdditionalInformation($this->context->smarty->fetch('module:waave_pg/views/templates/front/payment_infos.tpl'));
-
-        return $externalOption;
     }
 
     public function getContent()

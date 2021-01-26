@@ -1,1 +1,0 @@
-<p>Debit Cards/Credit Cards - US & International some restrictions apply. Max $2500 daily. Help chat available throughout the checkout process.</p>

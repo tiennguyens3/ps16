@@ -32,11 +32,15 @@ class Waave_PgPaymentModuleFrontController extends ModuleFrontController
     const PROD_URL = 'https://pg.getwaave.co/waavepay/checkout';
     const SANDBOX_URL = 'https://staging-pg.getwaave.co/waavepay/checkout';
 
+    public $display_column_left = false;
+
     /**
      * @see FrontController::postProcess()
      */
     public function postProcess()
     {
+        parent::initContent();
+
         $cart = $this->context->cart;
         if ($cart->id_customer == 0 || $cart->id_address_delivery == 0 || $cart->id_address_invoice == 0 || !$this->module->active) {
             Tools::redirect('index.php?controller=order&step=1');
@@ -77,7 +81,8 @@ class Waave_PgPaymentModuleFrontController extends ModuleFrontController
         $referenceId = $cart->id;
 
         $this->addJqueryPlugin('fancybox');
-        $this->registerJavascript(sha1('modules/waave_pg/views/js/waave_pg.js'), 'modules/waave_pg/views/js/waave_pg.js', ['priority' => 100]);
+        $shopDomainSsl = Tools::getShopDomainSsl(true, true);
+        $waavePgJsUrl = $shopDomainSsl.__PS_BASE_URI__.'modules/'.$this->module->name.'/views/js/waave_pg.js';
 
         $vars = array(
             'accessKey' => $accessKey,
@@ -87,14 +92,16 @@ class Waave_PgPaymentModuleFrontController extends ModuleFrontController
             'cancelUrl' => $cancelUrl,
             'returnUrl' => $returnUrl,
             'callbackUrl' => $callbackUrl,
-            'actionUrl' => $actionUrl
+            'actionUrl' => $actionUrl,
+            'waavePgJsUrl' => $waavePgJsUrl
         );
 
-        PrestaShopLogger::addLog('Waave - Begin checkout', 1, null, null, null, true);
-        PrestaShopLogger::addLog('Data: ' . json_encode($vars), 1, null, null, null, true);
 
         $this->context->smarty->assign($vars);
+        $this->setTemplate('payment_execution.tpl');
 
-        $this->setTemplate('module:waave_pg/views/templates/front/payment_return.tpl');
+        unset($vars['waavePgJsUrl']);
+        PrestaShopLogger::addLog('Waave - Begin checkout', 1, null, null, null, true);
+        PrestaShopLogger::addLog('Data: ' . json_encode($vars), 1, null, null, null, true);
     }
 }
