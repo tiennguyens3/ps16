@@ -101,6 +101,8 @@ class Waave_PgPaymentModuleFrontController extends ModuleFrontController
         $this->setTemplate('payment_execution.tpl');
 
         unset($vars['waavePgJsUrl']);
+        unset($vars['actionUrl']);
+
         PrestaShopLogger::addLog('Waave - Begin checkout', 1, null, null, null, true);
         PrestaShopLogger::addLog('Data: ' . json_encode($vars), 1, null, null, null, true);
     }

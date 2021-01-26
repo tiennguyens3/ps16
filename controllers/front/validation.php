@@ -111,7 +111,8 @@ class Waave_PgValidationModuleFrontController extends ModuleFrontController
      * 
      * @param array $data
      */
-    private function validateSignature($data, $uri) {
+    private function validateSignature($data, $uri)
+    {
         $secretKey = Configuration::get('PRIVATE_KEY');
         $body      = json_encode($data);
 
