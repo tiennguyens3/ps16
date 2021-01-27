@@ -65,7 +65,7 @@ class Waave_Pg extends PaymentModule
 
     public function install()
     {
-        if (!parent::install() || !$this->registerHook('payment')) {
+        if (!parent::install() || !$this->registerHook('payment') || !$this->registerHook('paymentReturn')) {
             return false;
         }
 
@@ -83,6 +83,40 @@ class Waave_Pg extends PaymentModule
         }
 
         return true;
+    }
+
+    public function hookPaymentReturn($params)
+    {
+        if (!$this->active) {
+            return;
+        }
+
+        $state = $params['objOrder']->getCurrentState();
+
+        PrestaShopLogger::addLog(
+            'Waave - State payment return: '.$state,
+            1,
+            null,
+            'cart',
+            $this->context->cart->id,
+            true
+        );
+
+        if ($state == Configuration::get('PS_OS_PAYMENT') || $state == 0) {
+            $reference = '';
+            if (isset($params['objOrder']->reference) && !empty($params['objOrder']->reference)) {
+                $reference = $params['objOrder']->reference;
+            }
+
+            $this->smarty->assign(array(
+               'total_to_pay' => Tools::displayPrice($params['total_to_pay'], $params['currencyObj'], false),
+               'status' => 'ok',
+               'id_order' => $params['objOrder']->id,
+               'reference' => $reference
+            ));
+        }
+
+        return $this->display(__FILE__, 'payment_return.tpl');
     }
 
     public function hookPayment($params)
