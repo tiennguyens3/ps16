@@ -76,6 +76,7 @@ class Waave_PgValidationModuleFrontController extends ModuleFrontController
             die('Error, signature is invalid.');
         }
 
+        $total = $data['amount'];
         $currency = $this->context->currency;
 
         $status = $data['status'];
