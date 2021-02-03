@@ -76,12 +76,6 @@ class Waave_PgValidationModuleFrontController extends ModuleFrontController
             die('Error, signature is invalid.');
         }
 
-        $total = (float)$cart->getOrderTotal(true, Cart::BOTH);
-        if ($total != $data['amount']) {
-            header("HTTP/1.0 500 Error");
-            die('Error, amount is invalid.');
-        }
-
         $currency = $this->context->currency;
 
         $status = $data['status'];
