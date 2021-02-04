@@ -32,6 +32,7 @@ class Waave_Pg extends PaymentModule
 {
     protected $_html = '';
     protected $_postErrors = array();
+    protected $_supportCurrencies = array('USD');
 
     public $details;
     public $owner;
@@ -57,10 +58,6 @@ class Waave_Pg extends PaymentModule
 
         $this->displayName = $this->l('Waave Payment Gateway');
         $this->description = $this->l('WAAVE Checkout (Debit Cards / Credit Cards).');
-
-        if (!count(Currency::checkPaymentCurrencies($this->id))) {
-            $this->warning = $this->l('No currency has been set for this module.');
-        }
     }
 
     public function install()
@@ -139,15 +136,25 @@ class Waave_Pg extends PaymentModule
     public function checkCurrency($cart)
     {
         $currency_order = new Currency($cart->id_currency);
-        $currencies_module = $this->getCurrency($cart->id_currency);
+        if (empty($currency_order)) {
+            return false;
+        }
 
-        if (is_array($currencies_module)) {
-            foreach ($currencies_module as $currency_module) {
-                if ($currency_order->id == $currency_module['id_currency']) {
-                    return true;
-                }
+        if (!in_array($currency_order->iso_code, $this->_supportCurrencies)) {
+            return false;
+        }
+
+        $currencies_module = $this->getCurrency($cart->id_currency);
+        if (!is_array($currencies_module)) {
+            return false;
+        }
+
+        foreach ($currencies_module as $currency_module) {
+            if ($currency_order->id == $currency_module['id_currency']) {
+                return true;
             }
         }
+
         return false;
     }
 

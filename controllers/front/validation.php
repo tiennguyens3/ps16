@@ -34,12 +34,15 @@ class Waave_PgValidationModuleFrontController extends ModuleFrontController
      */
     public function postProcess()
     {
+        PrestaShopLogger::addLog('Waave - process return url.', 1, null, null, null, true);
+
         $cartId = (int)Tools::getValue('id_cart');
         $row = DB::getInstance()->getRow('SELECT * FROM ' . _DB_PREFIX_ . 'cart WHERE id_cart = ' . $cartId);
 
         if ($row['id_customer'] == 0 || $row['id_address_delivery'] == 0 || $row['id_address_invoice'] == 0 || !$this->module->active) {
+            PrestaShopLogger::addLog('Error, cart not found.', 1, null, null, null, true);
             header("HTTP/1.0 404 Not Found");
-            die($this->module->l('Error, cart not found.', 'validation'));
+            die('Error, cart not found.');
         }
 
         $cart = new Cart($cartId);
@@ -47,19 +50,19 @@ class Waave_PgValidationModuleFrontController extends ModuleFrontController
 
         $customer = new Customer($cart->id_customer);
         if (!Validate::isLoadedObject($customer)) {
+            PrestaShopLogger::addLog('Error, customer not found.', 1, null, null, null, true);
             header("HTTP/1.0 404 Not Found");
-            die($this->module->l('Error, customer not found.', 'validation'));
+            die('Error, customer not found.');
         }
-
-        PrestaShopLogger::addLog('Waave - process return url', 1, null, null, null, true);
-        PrestaShopLogger::addLog('Validate order', 1, null, null, null, true);
 
         $json = file_get_contents('php://input');
         $data = json_decode($json, true);
 
         if ($data['reference_id'] != $cart->id) {
+            PrestaShopLogger::addLog('Error, response data is invalid.', 1, null, null, null, true);
+            PrestaShopLogger::addLog('Data: ' . $json, 1, null, null, null, true);
             header("HTTP/1.0 404 Not Found");
-            die($this->module->l('Error, response data is invalid.', 'validation'));
+            die('Error, response data is invalid.');
         }
 
         $request = array(
@@ -77,7 +80,7 @@ class Waave_PgValidationModuleFrontController extends ModuleFrontController
         }
 
         $total = $data['amount'];
-        $currency = $this->context->currency;
+        $currency = Currency::getIdByIsoCode($data['currency']);
 
         $status = $data['status'];
         $orderState = Configuration::get('PS_OS_ERROR');
@@ -89,14 +92,9 @@ class Waave_PgValidationModuleFrontController extends ModuleFrontController
             $orderState = Configuration::get('PS_OS_CANCELED');
         }
 
-        $valid = $this->module->validateOrder($cart->id, $orderState, $total, $this->module->displayName, NULL, [], (int)$currency->id, false, $customer->secure_key);
+        $valid = $this->module->validateOrder($cart->id, $orderState, $total, $this->module->displayName, NULL, [], (int)$currency, false, $customer->secure_key);
 
-        if (!$valid) {
-            header("HTTP/1.0 500 Error");
-            die('Error, order is invalid.');
-        }
-
-        PrestaShopLogger::addLog('Waave - request validation is done', 1, null, null, null, true);
+        PrestaShopLogger::addLog('Waave - request validation is done.', 1, null, null, null, true);
 
         die('OK-PRESTASHOP');
     }
@@ -115,7 +113,6 @@ class Waave_PgValidationModuleFrontController extends ModuleFrontController
         $headerSignature = isset($_SERVER['HTTP_X_API_SIGNATURE']) ? $_SERVER['HTTP_X_API_SIGNATURE'] : '';
 
         if ($signature === $headerSignature) {
-            PrestaShopLogger::addLog('Signature is valid.');
             return true;
         }
 
