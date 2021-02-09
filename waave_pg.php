@@ -43,7 +43,7 @@ class Waave_Pg extends PaymentModule
     {
         $this->name = 'waave_pg';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.0';
+        $this->version = '1.2.0';
         $this->ps_versions_compliancy = array('min' => '1.6', 'max' => _PS_VERSION_);
         $this->author = 'Waave';
         $this->controllers = array('validation', 'payment');
@@ -52,7 +52,6 @@ class Waave_Pg extends PaymentModule
         $this->currencies = true;
         $this->currencies_mode = 'checkbox';
 
-        $this->need_instance = 0;
         $this->bootstrap = true;
         parent::__construct();
 
